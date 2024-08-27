@@ -1,0 +1,64 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.1
+  name: bookstores.reader.com
+spec:
+  group: reader.com
+  names:
+    kind: BookStore
+    listKind: BookStoreList
+    plural: bookstores
+    singular: bookstore
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: BookStore is a resource.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BookStoreSpec is the spec of a BookStore resource.
+            properties:
+              container:
+                properties:
+                  image:
+                    type: string
+                  port:
+                    type: string
+                type: object
+              name:
+                type: string
+              replicas:
+                format: int32
+                type: integer
+            required:
+            - container
+            - name
+            - replicas
+            type: object
+        required:
+        - metadata
+        - spec
+        type: object
+    served: true
+    storage: true

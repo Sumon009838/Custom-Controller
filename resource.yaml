@@ -1,8 +1,0 @@
-apiVersion: "stable.example.com/v1"
-kind: Hello
-metadata:
-  name: hellosumon
-spec:
-  name: custom
-  image: hello
-  replicas: 2
