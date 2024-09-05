@@ -34,5 +34,5 @@ type BookStoreSpec struct {
 
 type ContainerSpec struct {
 	Image string `json:"image,omitempty"`
-	Port  string `json:"port,omitempty"`
+	Port  int32  `json:"port,omitempty"`
 }

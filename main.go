@@ -1,11 +1,12 @@
 package main
 
 import (
-	"context"
 	"flag"
-	myv1 "github.com/Sumon009838/CRD/pkg/apis/reader.com/v1"
-	myclient "github.com/Sumon009838/CRD/pkg/generated/clientset/versioned"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/Sumon009838/CRD/controller"
+	clientset "github.com/Sumon009838/CRD/pkg/generated/clientset/versioned"
+	informers "github.com/Sumon009838/CRD/pkg/generated/informers/externalversions"
+	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"log"
@@ -14,43 +15,34 @@ import (
 )
 
 func main() {
-	var kubeconfig *string
+	log.Println("Configure KubeConfig")
+	var kubeConfig *string
 	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		kubeConfig = flag.String("kubeConfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeConfig file")
 	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		kubeConfig = flag.String("kubeConfig", "", "absolute path to the kubeConfig file")
 	}
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeConfig)
+	if err != nil {
+		panic(err.Error())
+	}
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	exampleClient, err := clientset.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	kubeInformationFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
+	exampleInformerFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
 
-	flag.Parse()
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		panic(err)
+	c := controller.NewController(kubeClient, exampleClient, kubeInformationFactory.Apps().V1().Deployments(), exampleInformerFactory.BookStore().V1().BookStores())
+	stopCh := make(chan struct{})
+	kubeInformationFactory.Start(stopCh)
+	exampleInformerFactory.Start(stopCh)
+
+	if err := c.Run(1, stopCh); err != nil {
+		log.Println("Error running controller:", err)
 	}
-	ctx := context.TODO()
-	client, err := myclient.NewForConfig(config)
-	if err != nil {
-		panic(err)
-	}
-	bookstoreobj := myv1.BookStore{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "bookstore",
-		},
-		Spec: myv1.BookStoreSpec{
-			Name:     "bookstore",
-			Replicas: intPtr(3),
-			Container: myv1.ContainerSpec{
-				Image: "sumon124816/k8s:new",
-				Port:  "8080",
-			},
-		},
-	}
-	_, err = client.BookStoreV1().BookStores("default").Create(ctx, &bookstoreobj, metav1.CreateOptions{})
-	if err != nil {
-		panic(err)
-	}
-	time.Sleep(5 * time.Second)
-	log.Println("BookStore created! ")
-}
-func intPtr(i int32) *int32 {
-	return &i
 }

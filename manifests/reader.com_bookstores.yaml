@@ -44,7 +44,8 @@ spec:
                   image:
                     type: string
                   port:
-                    type: string
+                    format: int32
+                    type: integer
                 type: object
               name:
                 type: string
